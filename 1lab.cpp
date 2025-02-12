@@ -1,8 +1,19 @@
 #include <cstdio>
 #include <iostream>
+#include <stdlib.h>
+#include <cctype>
 using namespace std;
 
-#define MAX_STACK_SIZE 100
+#define MAX_STACK_SIZE 10000
+union operands
+{
+    char less;
+    char lessEqual;
+    char more;
+    char moreEqual;
+    char _and;
+    char _or;
+};
 
 class Stack
 {
@@ -53,12 +64,51 @@ public:
     }
 };
 
+int prec(char c)
+{
+    if (c == '!')
+        return 6;
+    else if (c == '<' || c == '<=' || c == '>' || c == '>=' || c == '==' || c == '!=')
+        return 5;
+    else if (c == '&&')
+        return 4;
+    else if (c == '||')
+        return 3;
+    else if (c == '^')
+        return 2;
+    else if (c == '→')
+        return 1;
+    else
+        return -1;
+}
+
+void infixToPostfix(string s)
+{
+    Stack st;
+    Stack result;
+
+    for (long unsigned i = 0; i < s.length(); i++)
+    {
+        char c = s[i];
+        if (c == ' ')
+        {
+            continue;
+        }
+        if (isalpha(c))
+        {
+            cout << c << " ";
+            result.push(c);
+        }
+        else
+        {
+            cout << c;
+        }
+    }
+}
+
 int main()
 {
-    Stack s;
-    // s.push('&');
-    // s.push('7');
-    // s.push('%');
-    // cout << s.peek() << endl;
+    string exp = "a == b";
+    infixToPostfix(exp);
     return 0;
 }
