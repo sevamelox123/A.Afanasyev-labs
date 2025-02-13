@@ -2,23 +2,23 @@
 #include <iostream>
 #include <stdlib.h>
 #include <cctype>
+#include <optional>
 using namespace std;
 
 #define MAX_STACK_SIZE 10000
-union operands
+struct tetoStruct
 {
-    char less;
-    char lessEqual;
-    char more;
-    char moreEqual;
-    char _and;
-    char _or;
+    bool tetobool;
+    union {
+        int num;
+        char op;
+    }; 
 };
 
 class Stack
 {
 private:
-    char Data[MAX_STACK_SIZE];
+    tetoStruct Data[MAX_STACK_SIZE];
     int TopOfStack;
 
 public:
@@ -34,7 +34,7 @@ public:
         return TopOfStack == MAX_STACK_SIZE - 1;
     }
 
-    void push(char item)
+    void push(tetoStruct item)
     {
         if (FullCheck())
         {
@@ -44,7 +44,7 @@ public:
         Data[++TopOfStack] = item;
     }
 
-    char pop()
+    tetoStruct pop()
     {
         if (EmptyCheck())
         {
@@ -54,7 +54,7 @@ public:
         return Data[TopOfStack--];
     }
 
-    char peek() const
+    tetoStruct peek() const
     {
         if (EmptyCheck())
         {
@@ -62,6 +62,10 @@ public:
             exit(1);
         }
         return Data[TopOfStack];
+    }
+    int itemsCheck()
+    {
+        return TopOfStack;
     }
 };
 
@@ -87,49 +91,92 @@ Stack infixToPostfix(string s)
 {
     Stack st;
     Stack result;
+    // int digitBuffer = 0;
+    std::optional<int> digitBuffer = 0;
 
     for (long unsigned i = 0; i < s.length(); i++)
     {
         char c = s[i];
 
-        if (c == ' '){
+        if (isdigit(c)){
+            if (!digitBuffer.has_value()) digitBuffer = 0;
+            digitBuffer = digitBuffer.value() *  10;
+            digitBuffer = digitBuffer.value() + (c - '0');
             continue;
         }
-
-
-        if (isalpha(c)){
-            result.push(c);
-        }
         else if(c == '('){
-            st.push('(');
+            tetoStruct teto;
+            teto.tetobool = true;
+            teto.op = c;
+            st.push(teto);
         }
         else if (c == ')'){
-            while(!st.EmptyCheck() && st.peek()!= '('){
-                result.push(st.peek());
-                st.pop();
+            if (digitBuffer.has_value()) {
+                tetoStruct teto;
+                teto.tetobool = false;
+                teto.num = digitBuffer.value();
+                result.push(teto);
+                digitBuffer.reset();
             }
-        }
-        else{
-            while(!st.EmptyCheck() && prec(st.peek()) >= prec(c)){
-                result.push(st.peek());
-                st.pop();
+            while(!st.EmptyCheck() && st.peek().op != '('){
+                result.push(st.pop());
+                
             }
-        st.push(c);
+            st.pop();
         }
-
+        else if (c != ' ') {
+            
+            while(!st.EmptyCheck() && prec(st.peek().op) >= prec(c)){
+                result.push(st.pop());
+            }
+            tetoStruct teto;
+            teto.tetobool = true;
+            teto.op = c;
+            st.push(teto);
+        }
+        if (digitBuffer.has_value()) {
+            tetoStruct teto;
+            teto.tetobool = false;
+            teto.num = digitBuffer.value();
+            result.push(teto);
+            digitBuffer.reset();
+        }
+        
     }
-    while(!result.EmptyCheck())
-    {
-        cout << result.pop() << " ";
+    if (digitBuffer.has_value()) {
+        tetoStruct teto;
+        teto.tetobool = false;
+        teto.num = digitBuffer.value();
+        result.push(teto);
     }
     
+    while (!st.EmptyCheck()) {
+        result.push(st.pop());
+    }
+    Stack reversed;
+    while(!result.EmptyCheck())
+    {
+        reversed.push(result.pop());
+    }
+    while (!reversed.EmptyCheck()) {
+        tetoStruct res = reversed.pop();
+        if (res.tetobool) {
+            std::cout << res.op << " ";
+        }
+        else {
+            std::cout << res.num << " ";
+        }
+    }
+    std::cout << std::endl;
+
+    return result;
 }
 
 int main()
 {
     Stack st;
     Stack result;
-    string exp = "a == b";
+    string exp = "100 > (0 < 2)";
     infixToPostfix(exp);
     return 0;
 }
