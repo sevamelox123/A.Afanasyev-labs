@@ -6,6 +6,16 @@
 using namespace std;
 
 #define MAX_STACK_SIZE 10000
+
+enum tetoEnum
+{
+    MOREEQUAL = ']',
+    LESSEQUAL = '[',
+    AND = '&',
+    OR = 'O',
+    IMPL = 'I',
+
+};
 struct tetoStruct
 {
     bool tetobool;
@@ -74,15 +84,15 @@ int prec(char c)
 {
     if (c == '!')
         return 6;
-    else if (c == '<' || c == '>')
+    else if (c == '<' || c == '>' || c == tetoEnum::MOREEQUAL || c == tetoEnum::LESSEQUAL)
         return 5;
-    else if (c == '&&')
+    else if (c == tetoEnum::AND)
         return 4;
-    else if (c == '||')
+    else if (c == tetoEnum::OR)
         return 3;
     else if (c == '^')
         return 2;
-    else if (c == '→')
+    else if (c == tetoEnum::IMPL)
         return 1;
     else
         return -1;
@@ -98,6 +108,7 @@ Stack infixToPostfix(string s)
     for (long unsigned i = 0; i < s.length(); i++)
     {
         char c = s[i];
+        char c1 = s[i + 1];
 
         if (isdigit(c))
         {
@@ -139,7 +150,30 @@ Stack infixToPostfix(string s)
             }
             tetoStruct teto;
             teto.tetobool = true;
-            teto.op = c;
+            if (c == '>' || c == '<' || c == '!' || c == '^')
+            {
+                teto.op = c;
+            }
+            else if (c == '>' && c1 == '=')
+            {
+                teto.op = tetoEnum::MOREEQUAL;
+            }
+            else if (c == '<' && c1 == '=')
+            {
+                teto.op == tetoEnum::LESSEQUAL;
+            }
+            else if (c == '&' && c1 == '&')
+            {
+                teto.op = tetoEnum::AND;
+            }
+            else if (c == '|' && c1 == '|')
+            {
+                teto.op = tetoEnum::OR;
+            }
+            else if (c == '-' && c1 == '>')
+            {
+                teto.op = tetoEnum::IMPL;
+            }
             st.push(teto);
         }
         if (digitBuffer.has_value())
@@ -168,50 +202,61 @@ Stack infixToPostfix(string s)
     {
         reversed.push(result.pop());
     }
-    // while (!reversed.EmptyCheck())
-    // {
-    //     tetoStruct res = reversed.pop();
-    //     if (res.tetobool)
-    //     {
-    //         std::cout << res.op << " ";
-    //     }
-    //     else
-    //     {
-    //         std::cout << res.num << " ";
-    //     }
-    // }
-    // std::cout << std::endl;
 
     return reversed;
 }
 bool TetoCalc(Stack tetoStack)
 {
     Stack st;
-    while(!tetoStack.EmptyCheck())
+    while (!tetoStack.EmptyCheck())
     {
         tetoStruct teto = tetoStack.pop();
-        if(teto.tetobool)
+        if (teto.tetobool)
         {
-            // int right = st.pop().num;
-            if (teto.op == '!') {
+            if (teto.op == '!')
+            {
                 int right = st.pop().num;
             }
-            else {
+            else
+            {
                 int right = st.pop().num;
                 int left = st.pop().num;
                 tetoStruct miku;
-                if (teto.op == '>') {
+                if (teto.op == '>')
+                {
                     miku.op = false;
                     miku.num = static_cast<int>(left > right);
                 }
-                else if (teto.op == '<') {
+                else if (teto.op == '<')
+                {
                     miku.op = false;
                     miku.num = static_cast<int>(left < right);
+                } else if(teto.op == tetoEnum::MOREEQUAL)
+                {
+                    miku.op = false;
+                    miku.num = static_cast<int>(left >= right);
+                }else if(teto.op == tetoEnum::LESSEQUAL )
+                {
+                    miku.op = false;
+                    miku.num = static_cast<int>(left <= right);
+                }else if(teto.op == tetoEnum::AND)
+                {
+                    miku.op = false;
+                    miku.num = static_cast<int>(left && right);
+                }else if(teto.op == tetoEnum::OR)
+                {
+                    miku.op = false;
+                    miku.num = static_cast<int>(left || right);
+                }else if(teto.op == '^')
+                {
+                    miku.op = false;
+                    miku.num = static_cast<int>(static_cast<bool>(left) xor static_cast<bool>(right));
                 }
-                
+
                 st.push(miku);
             }
-        } else 
+        }
+        else
         {
             st.push(teto);
         }
@@ -223,7 +268,7 @@ int main()
 {
     Stack st;
     Stack result;
-    string exp = "100 < (0 < 2)";
+    string exp = "1 ^ 1";
     std::cout << TetoCalc(infixToPostfix(exp)) << std::endl;
     return 0;
 }
