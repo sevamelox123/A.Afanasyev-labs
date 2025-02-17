@@ -14,6 +14,8 @@ enum tetoEnum
     AND = '&',
     OR = 'O',
     IMPL = 'I',
+    EQUAL = '=',
+    NOTEQUAL = 'N'
 
 };
 struct tetoStruct
@@ -60,7 +62,8 @@ public:
         if (EmptyCheck())
         {
             cerr << "Stack underflow\n";
-            exit(1);
+            // exit(1);
+            throw runtime_error("Aboba");
         }
         return Data[TopOfStack--];
     }
@@ -84,7 +87,7 @@ int prec(char c)
 {
     if (c == '!')
         return 6;
-    else if (c == '<' || c == '>' || c == tetoEnum::MOREEQUAL || c == tetoEnum::LESSEQUAL)
+    else if (c == '<' || c == '>' || c == tetoEnum::MOREEQUAL || c == tetoEnum::LESSEQUAL || c == tetoEnum::EQUAL || c == tetoEnum::NOTEQUAL )
         return 5;
     else if (c == tetoEnum::AND)
         return 4;
@@ -103,15 +106,18 @@ Stack infixToPostfix(string s)
     Stack st;
     Stack result;
     // int digitBuffer = 0;
-    std::optional<int> digitBuffer = 0;
+    std::optional<int> digitBuffer;
 
     for (long unsigned i = 0; i < s.length(); i++)
     {
         char c = s[i];
         char c1 = s[i + 1];
 
+        // std::cout << c << endl;
+
         if (isdigit(c))
         {
+            // std::cout << c << endl;
             if (!digitBuffer.has_value())
                 digitBuffer = 0;
             digitBuffer = digitBuffer.value() * 10;
@@ -150,31 +156,49 @@ Stack infixToPostfix(string s)
             }
             tetoStruct teto;
             teto.tetobool = true;
-            if (c == '>' || c == '<' || c == '!' || c == '^')
+            if ((c == '>' && c1 != '=') || (c == '<' && c1 != '=') || (c == '!' && c1 != '=') || c == '^')
             {
+                // cout << c << " " << c1 << endl;
                 teto.op = c;
             }
             else if (c == '>' && c1 == '=')
             {
+                // cout << c << " " << c1 << endl;
                 teto.op = tetoEnum::MOREEQUAL;
+                i++;
             }
             else if (c == '<' && c1 == '=')
             {
-                teto.op == tetoEnum::LESSEQUAL;
+                // cout << c << " " << c1 << endl;
+                teto.op = tetoEnum::LESSEQUAL;
+                i++;
             }
             else if (c == '&' && c1 == '&')
             {
                 teto.op = tetoEnum::AND;
+                i++;
             }
             else if (c == '|' && c1 == '|')
             {
                 teto.op = tetoEnum::OR;
+                i++;
             }
             else if (c == '-' && c1 == '>')
             {
                 teto.op = tetoEnum::IMPL;
+                i++;
+            } else if(c == '=' && c1 == '=')
+            {
+                teto.op = tetoEnum::EQUAL;
+                i++;
+            } else if(c == '!' && c1 == '=')
+            {
+                teto.op = tetoEnum::NOTEQUAL;
+                i++;
             }
+            cout << "- " << teto.op << endl;
             st.push(teto);
+            cout << st.itemsCheck() << " " << result.itemsCheck() << endl;
         }
         if (digitBuffer.has_value())
         {
@@ -197,6 +221,7 @@ Stack infixToPostfix(string s)
     {
         result.push(st.pop());
     }
+
     Stack reversed;
     while (!result.EmptyCheck())
     {
@@ -216,41 +241,59 @@ bool TetoCalc(Stack tetoStack)
             if (teto.op == '!')
             {
                 int right = st.pop().num;
+
+                tetoStruct miku;
+                miku.tetobool = false;
+                miku.num = static_cast<int>(!static_cast<bool>(right));
+                st.push(miku);
             }
             else
             {
+                // std::cout << teto.op << std::endl;
                 int right = st.pop().num;
                 int left = st.pop().num;
                 tetoStruct miku;
                 if (teto.op == '>')
                 {
-                    miku.op = false;
+                    miku.tetobool = false;
                     miku.num = static_cast<int>(left > right);
                 }
                 else if (teto.op == '<')
                 {
-                    miku.op = false;
+                    miku.tetobool = false;
                     miku.num = static_cast<int>(left < right);
                 } else if(teto.op == tetoEnum::MOREEQUAL)
                 {
-                    miku.op = false;
+                    miku.tetobool = false;
                     miku.num = static_cast<int>(left >= right);
                 }else if(teto.op == tetoEnum::LESSEQUAL )
                 {
-                    miku.op = false;
+                    miku.tetobool = false;
                     miku.num = static_cast<int>(left <= right);
                 }else if(teto.op == tetoEnum::AND)
                 {
-                    miku.op = false;
+                    miku.tetobool = false;
                     miku.num = static_cast<int>(left && right);
                 }else if(teto.op == tetoEnum::OR)
                 {
-                    miku.op = false;
+                    miku.tetobool = false;
                     miku.num = static_cast<int>(left || right);
                 }else if(teto.op == '^')
                 {
-                    miku.op = false;
+                    miku.tetobool = false;
                     miku.num = static_cast<int>(static_cast<bool>(left) xor static_cast<bool>(right));
+                }else if(teto.op == tetoEnum::EQUAL)
+                {
+                    miku.tetobool = false;
+                    miku.num = static_cast<int>(left == right);
+                }else if(teto.op == tetoEnum::NOTEQUAL)
+                {
+                    miku.tetobool = false;
+                    miku.num = static_cast<int>(left != right);
+                }else if(teto.op == tetoEnum::IMPL)
+                {
+                    miku.tetobool = false;
+                    miku.num = static_cast<int>(!static_cast<bool>(left) || static_cast<bool>(right));
                 }
 
                 st.push(miku);
@@ -268,7 +311,17 @@ int main()
 {
     Stack st;
     Stack result;
-    string exp = "1 ^ 1";
+    string exp = "((1 > 2) -> (2 > 1))";
+    Stack postfix = infixToPostfix(exp);
+    while (!postfix.EmptyCheck()) {
+        if (postfix.peek().tetobool) {
+            std::cout << postfix.pop().op << " ";
+        }
+        else {
+            std::cout << postfix.pop().num << " ";
+        }
+    }
+    std::cout << endl;
     std::cout << TetoCalc(infixToPostfix(exp)) << std::endl;
     return 0;
 }
