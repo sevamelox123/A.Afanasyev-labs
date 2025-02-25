@@ -253,9 +253,6 @@ int main()
     Stack result;
     string exp = "((1||0)->(2>3))";
     Stack postfix = infixToPostfix(exp);
-
     std::cout << TetoCalc(infixToPostfix(exp)) << std::endl;
-    return 0; // в Reversed первый симавол 0
-    // for debug  clang -c -Xclang -ast-dump 1lab.cpp 
-    // 
+    return 0;
 }
